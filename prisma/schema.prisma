@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  savedColleges SavedCollege[]
+  reviews       Review[]
+  questions     Question[]
+  answers       Answer[]
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model College {
+  id              String   @id @default(cuid())
+  name            String
+  shortName       String
+  location        String
+  state           String
+  type            String   // Government | Deemed | Private
+  rating          Float    @default(0)
+  fees            Int
+  established     Int
+  ranking         Int
+  placementRate   Int
+  avgPackage      Int
+  highestPackage  Int
+  overview        String   @db.Text
+  color           String   @default("#1d4ed8")
+  streams         String[] // Engineering, Management, etc.
+  courses         String[]
+  tags            String[]
+  createdAt       DateTime @default(now())
+
+  savedBy         SavedCollege[]
+  reviews         Review[]
+  questions       Question[]
+}
+
+model SavedCollege {
+  id        String  @id @default(cuid())
+  userId    String
+  collegeId String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  college   College @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  savedAt   DateTime @default(now())
+  @@unique([userId, collegeId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  collegeId String
+  rating    Int
+  text      String   @db.Text
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  college   College  @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+}
+
+model Question {
+  id        String   @id @default(cuid())
+  userId    String
+  collegeId String?
+  question  String   @db.Text
+  upvotes   Int      @default(0)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  college   College? @relation(fields: [collegeId], references: [id], onDelete: SetNull)
+  answers   Answer[]
+}
+
+model Answer {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String
+  text       String   @db.Text
+  upvotes    Int      @default(0)
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
